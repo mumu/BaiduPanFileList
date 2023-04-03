@@ -3,11 +3,13 @@
 // @namespace  https://greasyfork.org/scripts/5128-baidupanfilelist/code/BaiduPanFileList.user.js
 // @version    1.2.2
 // @description  统计百度盘文件(夹)数量大小. Thanks BaiduPanMD5Button
-// @match	https://pan.baidu.com/disk/home*
-// @include	https://pan.baidu.com/disk/home*
+// @match	https://pan.baidu.com/disk/main*
+// @include	https://pan.baidu.com/disk/main*
 // @require http://libs.baidu.com/jquery/2.1.1/jquery.min.js
 // @grant GM_xmlhttpRequest
 // @grant GM_setClipboard
+// @grant GM_setValue
+// @grant GM_getValue
 // @run-at document-end
 // @copyright  2014+, icgeass@hotmail.com
 // ==/UserScript==
@@ -60,14 +62,22 @@ document.addEventListener("keydown", function(e){
 }, false);
 
 // 自己的网盘添加按钮
-if (url.indexOf("http://pan.baidu.com/disk/home") != -1) {
+console.log('append.'+url);
+if (url.indexOf("://pan.baidu.com/disk/main") != -1) {
+    console.log('append..');
     if(!document.getElementById(BTN_WAITING_TEXT)){
+        console.log('append...');
         $("[style='position: absolute; top: 0px; padding-top: 11px; line-height: normal;']").append(btn_curr);
+        var o = $("div.u-button-group.wp-s-agile-tool-bar__h-button-group.is-main");
+        o.append(btn_curr);
+        console.log(o);
+        //$("body").append(btn_curr);
     }
 }
 
 // 处理按钮和快捷键
 function showInfo(button, includeSubDir) {
+    console.log('start...');
     if(button.disabled||button.error){
         return;
     }
@@ -76,11 +86,11 @@ function showInfo(button, includeSubDir) {
     while (url.indexOf("%25") != -1) {
         url = url.replace("%25", "%");
     }
-    var listurl = BASE_URL_API; 
+    var listurl = BASE_URL_API;
     var folder_access_times = 0;
     var currentDir = "";
     var checkedPath = new Array();
-    
+
     var str_alert = "";
     var num_all_files = 0;
     var num_all_folder = 0;
@@ -117,6 +127,12 @@ function showInfo(button, includeSubDir) {
         if(button.error){
             return;
         }
+        var con = GM_getValue(currentDir,'not found');
+        if (con != 'not found') {
+            alert(con);
+            showBtn(true);
+            return;
+        }
         GM_xmlhttpRequest({
             method : 'GET',
             synchronous : false,
@@ -132,6 +148,7 @@ function showInfo(button, includeSubDir) {
                 showError(decodeURIComponent(url.replace(BASE_URL_API, "")) + "\n\n请求超时, 请刷新重试");
             },
             onload : function(reText) {
+                console.log(reText.responseText);
                 var JSONobj = JSON.parse(reText.responseText);
                 if (JSONobj.errno != 0) {
                     showError("读取目录: " + decodeURIComponent(url.replace(BASE_URL_API, "")) + "  失败, 错误码: " + JSONobj.errno);
@@ -172,10 +189,12 @@ function showInfo(button, includeSubDir) {
                     str_alert = (checkedPath.length == 0 ? currentDir : checkedPath.join("\r\n")) + CTL + CTL
                     + "files: " + num_all_files + ", folders: " + num_all_folder + CTL
                     + "xxx (JPG).zip: " + num_jpg + CTL
-                    + "xxx.zip: " + num_original + CTL 
+                    + "xxx.zip: " + num_original + CTL
                     + "size: " + getReadableFileSizeString(size_all) + "  ("+ size_all.toLocaleString() + " Bytes)" + CTL;
                     GM_setClipboard(str_alert + CTL + CTL + name_all.sort().join("\r\n") + "\r\n");
+					GM_setValue(currentDir,str_alert + CTL + CTL + name_all.sort().join("\r\n") + "\r\n");
                     alert(str_alert.replace(/\r\n/g, "\n"));
+                    //alert(GM_getValue(currentDir,'not found'));
                     showBtn(true);
                 }
             }
@@ -247,14 +266,14 @@ function isArrayContains(arr, obj) {
 // //////////////////////////////////////////////////////////////////////
 
 /*
- * === 说明 === 
- * @作者:有一份田 
+ * === 说明 ===
+ * @作者:有一份田
  * @官网:http://www.duoluohua.com/download/
- * @Email:youyifentian@gmail.com 
+ * @Email:youyifentian@gmail.com
  * @Git:http://git.oschina.net/youyifentian
  * @转载重用请保留此信息
- * 
- * 
+ *
+ *
  * modified by icgeass@hotmail.com
  */
 function getCheckItems(){
