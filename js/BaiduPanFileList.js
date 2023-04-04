@@ -10,6 +10,7 @@
 // @grant GM_setClipboard
 // @grant GM_setValue
 // @grant GM_getValue
+// @grant GM_listValues
 // @run-at document-end
 // @copyright  2014+, icgeass@hotmail.com
 // ==/UserScript==
@@ -38,6 +39,38 @@ btn_curr.disabled = false;
 btn_curr.waiting_text = BTN_WAITING_TEXT;
 btn_curr.running_text = BTN_RUNNING_TEXT;
 btn_curr.error = false;
+// test按钮
+var btn_test = document.createElement("button");
+btn_test.type = "button";
+btn_test.style.cssText = 'margin: 0px 10px;height: 28px;';
+btn_test.innerHTML = 'test';
+btn_test.id = 'test';
+btn_test.disabled = false;
+btn_test.waiting_text = 'test';
+btn_test.running_text = 'test';
+btn_test.error = false;
+btn_test.onclick = function(e){
+    e = e||window.event;
+    if(e.ctrlKey){
+       getAllList( true);
+    }else{
+       getAllList( false);
+    }
+};
+var file_all = new Array();
+function getAllList(isCtrl) {
+	
+        var all = GM_listValues();
+    for(var a of all) {
+        var items = GM_getValue(a);
+        if (items.length > 0) {
+            for(var i of items) {
+              file_all.push(i.path+'\t'+i.md5+'\t'+i.size+'\r\n');
+            }
+        }
+    }
+	console.log(file_all.join(''));
+}
 // 按钮单击
 btn_curr.onclick = function(e){
     e = e||window.event;
@@ -70,6 +103,7 @@ if (url.indexOf("://pan.baidu.com/disk/main") != -1) {
         $("[style='position: absolute; top: 0px; padding-top: 11px; line-height: normal;']").append(btn_curr);
         var o = $("div.u-button-group.wp-s-agile-tool-bar__h-button-group.is-main");
         o.append(btn_curr);
+        o.append(btn_test);
         console.log(o);
         //$("body").append(btn_curr);
     }
@@ -122,15 +156,17 @@ function showInfo(button, includeSubDir) {
     }
     // 保存选择文件（夹）路径
     checkedPath = getCheckedPathArray(currentDir);
+
     // 请求数据
     function getList(url) {
         if(button.error){
             return;
         }
-        var con = GM_getValue(currentDir,'not found');
+        var con = GM_getValue(url,'not found');
         if (con != 'not found') {
-            alert(con);
-            showBtn(true);
+            doAction(con);
+            //alert(con);
+            //showBtn(true);
             return;
         }
         GM_xmlhttpRequest({
@@ -154,10 +190,16 @@ function showInfo(button, includeSubDir) {
                     showError("读取目录: " + decodeURIComponent(url.replace(BASE_URL_API, "")) + "  失败, 错误码: " + JSONobj.errno);
                     return;
                 }
-                var size_list = JSONobj.list.length;
+                GM_setValue(url,JSONobj.list);
+                doAction(JSONobj.list);
+            }
+        });
+    }
+    function doAction(JSONobj_list) {
+        var size_list = JSONobj_list.length;
                 var curr_item = null;
                 for ( var i = 0; i < size_list; i++) {
-                    curr_item = JSONobj.list[i];
+                    curr_item = JSONobj_list[i];
                     if(listurl === url && checkedPath.length != 0 && !isArrayContains(checkedPath, curr_item.path)){
                     	continue;
                     }
@@ -192,13 +234,11 @@ function showInfo(button, includeSubDir) {
                     + "xxx.zip: " + num_original + CTL
                     + "size: " + getReadableFileSizeString(size_all) + "  ("+ size_all.toLocaleString() + " Bytes)" + CTL;
                     GM_setClipboard(str_alert + CTL + CTL + name_all.sort().join("\r\n") + "\r\n");
-					GM_setValue(currentDir,str_alert + CTL + CTL + name_all.sort().join("\r\n") + "\r\n");
+					//GM_setValue(currentDir,name_all.sort().join("\r\n") + "\r\n");
                     alert(str_alert.replace(/\r\n/g, "\n"));
                     //alert(GM_getValue(currentDir,'not found'));
                     showBtn(true);
                 }
-            }
-        });
     }
     // 错误提示
     function showError(info){
