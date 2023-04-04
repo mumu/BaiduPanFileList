@@ -15,3 +15,12 @@ https://greasyfork.org/help/installing-user-scripts
 
 ### 示例
 [点击查看](https://raw.githubusercontent.com/icgeass/BaiduPanFileList/master/resources/demo.txt)
+
+### 本次更新后使用方法
+1. 在网盘首页，按住Ctrl键+点击統計檔案按钮。
+2. 如果出现错误，重复第一步，直到显示网盘总共大小。
+3. 点击test按钮
+4. 按F12打开开发者工具，到console里复制打印出的内容，保存到txt。
+5. 打开excel，导入保存的txt，按Tab分隔。会显示三列：文件路径，文件md5（文件夹显示undefined），文件大小Byte（文件夹显示0）
+6. 按文件md5可以显示相同文件。可以使用excel公式：=COUNTIF(B:B,[@Column2])   。该值为该文件出现的次数。当该值>=2时，可以依据文件路径删除重复的文件。
+7. 文件大小可以显示为MB，利用excel公式：=[@Column3]/1024/1024
